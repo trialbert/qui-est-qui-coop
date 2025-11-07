@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Qui est qui ? - Culture Design</title>
+
+  <!-- Typos demandées -->
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bungee:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Qui est qui ?</h1>
+    <h2>Culture design</h2>
+    <button
+  class="theme-toggle"
+  type="button"
+  title="Toggle theme"
+  aria-label="Toggle theme"
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    width="1em"
+    height="1em"
+    fill="currentColor"
+    class="theme-toggle__expand"
+    viewBox="0 0 32 32"
+  >
+    <!-- clipPath d'origine -->
+    <clipPath id="theme-toggle__expand__cutout">
+      <path d="M0-11h25a1 1 0 0017 13v30H0Z" />
+    </clipPath>
+
+    <!-- ✅ mask pour “mordre” le disque et créer le croissant -->
+    <defs>
+      <mask id="tt-mask">
+        <!-- blanc = visible ; noir = “coupé” -->
+        <rect width="100%" height="100%" fill="#fff"/>
+        <!-- Ce cercle noir se décale (animé en CSS) -->
+        <circle id="tt-cut" cx="16" cy="16" r="9.2" fill="#000"/>
+      </mask>
+    </defs>
+
+    <g clip-path="url(#theme-toggle__expand__cutout)">
+      <!-- Disque (soleil/lune) avec le mask -->
+      <circle cx="16" cy="16" r="8.4" mask="url(#tt-mask)"/>
+      <!-- Rayons / étoiles (le path du modèle) -->
+      <path class="tt-rays" d="M18.3 3.2c0 1.3-1 2.3-2.3 2.3s-2.3-1-2.3-2.3S14.7.9 16 .9s2.3 1 2.3 2.3zm-4.6 25.6c0-1.3 1-2.3 2.3-2.3s2.3 1 2.3 2.3-1 2.3-2.3 2.3-2.3-1-2.3-2.3zm15.1-10.5c-1.3 0-2.3-1-2.3-2.3s1-2.3 2.3-2.3 2.3 1 2.3 2.3-1 2.3-2.3 2.3zM3.2 13.7c1.3 0 2.3 1 2.3 2.3s-1 2.3-2.3 2.3S.9 17.3.9 16s1-2.3 2.3-2.3zm5.8-7C9 7.9 7.9 9 6.7 9S4.4 8 4.4 6.7s1-2.3 2.3-2.3S9 5.4 9 6.7zm16.3 21c-1.3 0-2.3-1-2.3-2.3s1-2.3 2.3-2.3 2.3 1 2.3 2.3-1 2.3-2.3 2.3zm2.4-21c0 1.3-1 2.3-2.3 2.3S23 7.9 23 6.7s1-2.3 2.3-2.3 2.4 1 2.4 2.3zM6.7 23C8 23 9 24 9 25.3s-1 2.3-2.3 2.3-2.3-1-2.3-2.3 1-2.3 2.3-2.3z"/>
+    </g>
+  </svg>
+</button>
+
+  </header>
+  <!-- Barre de score -->
+  <div id="scoreBar" class="score-bar">Progression : 0 / 0</div>
+  <div id="progressWrapper" class="progress-wrapper">
+    <div id="progressBar" class="progress-bar"></div>
+  </div>
+  <div id="familyProgress" class="family-progress"></div>
+
+  <main>
+    <div class="board" id="board">
+  <div class="dropzones">
+    <div class="dropzone" data-famille="Graphisme"></div>
+    <div class="dropzone" data-famille="Objet"></div>
+    <div class="dropzone" data-famille="Espace"></div>
+    <div class="dropzone" data-famille="Mode"></div>
+  </div>
+  <div class="dropzone" id="mouvement_moderniste" data-family="mouvement_moderniste"></div>
+
+  <!-- ✅ Zone de pioche NEUTRE (ne pas lui donner .dropzone) -->
+  <div id="drawZone" class="draw-zone"></div>
+
+  <!-- les cartes sont injectées ici -->
+</div>
+  </main>
+
+  <!-- Zoom -->
+  <div id="zoom" class="zoom hidden" aria-hidden="true" role="dialog" aria-modal="true">
+    <div id="zoomBackdrop" class="zoom-backdrop" aria-hidden="true"></div>
+    <div class="zoom-card" role="document">
+      <button id="closeZoom" class="close" aria-label="Fermer">✕</button>
+      <div class="zoom-image-wrap">
+        <img id="zoomImage" src="" alt="">
+        <div id="foundInfo" class="found-info"></div>
+      </div>
+      <div class="progress-row" id="progressDots"></div>
+      <div class="input-bar">
+        <input id="answerInput" type="text" placeholder="Tape une date, un auteur ou le titre…" autocomplete="off" />
+        <div class="input-actions">
+          <button id="validateBtn">Valider</button>
+          <button id="giveUpBtn" class="help-btn" title="Révéler une information">Ma langue au chat !</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message feedback familles -->
+  <div id="familyMsgContainer" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Boutons -->
+  <button id="infoBtn" class="info-btn" title="Afficher les règles">
+    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>
+  </button>
+
+  <button id="resetBtn" class="reset-btn" title="Réinitialiser les réponses et remélanger">
+    <!-- SVG shuffle -->
+    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#fff"><path d="M204-318q-22-38-33-78t-11-82q0-134 93-228t227-94h7l-64-64 56-56 160 160-160 160-56-56 64-64h-7q-100 0-170 70.5T240-478q0 26 6 51t18 49l-60 60ZM481-40 321-200l160-160 56 56-64 64h7q100 0 170-70.5T720-482q0-26-6-51t-18-49l60-60q22 38 33 78t11 82q0 134-93 228t-227 94h-7l64 64-56 56Z"/></svg>
+  </button>
+  
+  <button id="soundBtn" class="sound-btn" title="Son activé" aria-label="Basculer le son" aria-pressed="false">
+  <!-- Icône “son ON” par défaut -->
+  <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M640-440v-80h160v80H640Zm48 280-128-96 48-64 128 96-48 64Zm-80-480-48-64 128-96 48 64-128 96ZM120-360v-240h160l200-200v640L280-360H120Zm280-246-86 86H200v80h114l86 86v-252ZM300-480Z"/></svg>
+</button>
+
+  <!-- Modal d'introduction -->
+  <div id="introModal" class="intro-modal hidden" role="dialog" aria-modal="true">
+    <div class="intro-content">
+      <button id="closeIntro" class="close" aria-label="Fermer">✕</button>
+      <h1>Qui est qui ?</h1>
+      <h2>Culture design</h2>
+      <p>Ce mini-jeu pédagogique vous permettra de <strong>votre culture des différents domaines du design.</strong> Enrichissez vos références à travers <strong>deux manières de jouer :</strong></p>
+      <h3>Qui est qui ?</h3>
+      <p>Cliquez simplement sur une carte et amusez-vous à retrouvez <strong>le nom de la création, son auteur et sa date.</strong> Recommencez pour chaque référence présente sur le plateau.</p>
+      <h3>Familles du design</h3>
+      <p>À l'aide des 4 zones du plateau, tentez aussi de retrouver <strong>à quelle famille du design appartient chaque référence :</strong></p>
+      <ul>
+        <li>💻 Design graphique</li>
+        <li>🪑 Design d'objet</li>
+        <li>🏠 Design d'espace</li>
+        <li>👗 Design de mode</li>
+      </ul>
+      <p>À vous de jouer ! <strong>La culture, c'est la clé de la créativité !</strong></p>
+      <button id="startGameBtn" class="start-btn">Commencer à jouer</button>
+      <p><small><a href="https://www.tristan-albert.com/" target="_blank">Game design & développement | Tristan ALBERT - Designer produit & Graphiste</a></small><p/>
+    </div>
+  </div>
+
+  <!-- 1) Client Socket.IO : doit être AVANT ton script -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- 2) Pastille présence (z-index très haut pour être visible par-dessus le plateau) -->
+  <div id="presence-pill">
+  Connectés : <span id="presence-count">0</span>
+</div>
+
+  <script defer src="script.js"></script>
+  <!-- Gate mobile (affiché seulement sur mobile / écran étroit) -->
+<div id="mobileGate" class="mobile-gate" role="dialog" aria-modal="true" aria-live="polite">
+  <div class="mobile-gate__content">
+    <h2>Qui est qui ? | Culture design est disponible sur ordinateur 🖥️</h2>
+    <p>Pour profiter pleinement du jeu, utilisez un écran plus grand.</p>
+    <p><small>🤫 La version mobile est en cours de développement.</small></p>
+  </div>
+</div>
+</body>
+</html>

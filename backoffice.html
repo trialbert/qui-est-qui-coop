@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Backoffice – Qui est qui ?</title>
+<style>
+  :root{
+    --bg:#0f1b17; --fg:#e9f5f4; --muted:#a7c7c5; --acc:#00a1a6; --bad:#ff5a5f;
+    --card:#142821; --border:#23453b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,Segoe UI,Roboto,Arial}
+  header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
+  header h1{font-size:18px;margin:0}
+  header .actions{display:flex;gap:8px;flex-wrap:wrap}
+  button{border:1px solid var(--border);background:#173126;color:var(--fg);padding:8px 12px;border-radius:10px;cursor:pointer}
+  button.primary{background:var(--acc);border-color:transparent;color:#001a1b;font-weight:600}
+  button.danger{background:#2b1919;border-color:#4d2323;color:#ffd8d8}
+  input,select{background:#11231d;color:var(--fg);border:1px solid var(--border);border-radius:8px;padding:8px}
+  input[type="file"]{padding:6px}
+  .toolbar{display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px dashed var(--border)}
+  main{display:grid;grid-template-columns:320px 1fr;min-height:calc(100vh - 120px)}
+  aside{border-right:1px solid var(--border);padding:12px;overflow:auto}
+  .list{display:flex;flex-direction:column;gap:8px}
+  .item{display:flex;gap:10px;align-items:center;padding:8px;background:var(--card);border:1px solid var(--border);border-radius:12px;cursor:grab}
+  .item.dragging{opacity:.6}
+  .thumb{width:56px;height:56px;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:#0b1613;display:grid;place-items:center}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .meta{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .meta .title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .meta .sub{color:var(--muted);font-size:12px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .pill{padding:2px 6px;border-radius:999px;background:#13352f;border:1px solid var(--border);color:var(--muted);font-size:11px}
+  section#editor{padding:16px;overflow:auto}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid .row{display:flex;flex-direction:column;gap:6px}
+  .row label{color:var(--muted);font-size:12px}
+  .preview{margin-top:8px;background:var(--card);border:1px dashed var(--border);border-radius:12px;padding:10px;display:flex;gap:12px;align-items:center}
+  .preview img{width:120px;height:120px;object-fit:cover;border-radius:10px;border:1px solid var(--border)}
+  .empty{opacity:.6}
+  .help{color:var(--muted);font-size:12px}
+  footer{padding:10px 0 0;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .filters{display:flex;gap:8px;align-items:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>Backoffice – Qui est qui ?</h1>
+  <div class="actions">
+    <input id="fileJson" type="file" accept="application/json"/>
+    <button id="btnImport">Importer JSON</button>
+    <button id="btnAdd">+ Ajouter</button>
+    <button id="btnDuplicate">Dupliquer</button>
+    <button id="btnDelete" class="danger">Supprimer</button>
+    <button id="btnExport" class="primary" title="Ctrl/Cmd+S">Exporter JSON</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="filters">
+    <input id="q" placeholder="Filtrer (titre, auteur)…" style="width:260px">
+    <select id="fam">
+      <option value="">Toutes familles</option>
+      <option>Graphisme</option><option>Objet</option><option>Espace</option><option>Mode</option>
+    </select>
+    <span id="count" class="pill">0 élément</span>
+  </div>
+  <div class="help" style="margin-left:auto">Astuce : glisse les items pour réordonner • Ctrl/Cmd+S = Export.</div>
+</div>
+
+<main>
+  <aside>
+    <div id="list" class="list"></div>
+  </aside>
+
+  <section id="editor">
+    <div class="empty">Sélectionne une carte dans la liste ou clique « Ajouter ».</div>
+    <div id="form" style="display:none">
+      <div class="grid">
+        <div class="row" style="grid-column:1/-1">
+          <label>Image (URL ou déposer un fichier)</label>
+          <input id="fImage" placeholder="assets/images/lehanneur.jpg">
+          <div class="preview">
+            <img id="prev" alt="">
+            <div>
+              <div class="help">Dépose une image (H926px x L600px) → le chemin relatif est proposé (ex. <code>assets/images/…</code>).  
+              L’<b>ID</b> sera auto-généré depuis le <b>nom de fichier</b> (sans extension).</div>
+              <div style="margin-top:6px;display:flex;gap:8px">
+                <button id="btnPickFile" type="button">Choisir un fichier…</button>
+                <input id="fileImg" type="file" accept="image/*" hidden>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row"><label>Titre</label><input id="fTitre" autocomplete="off"></div>
+        <div class="row"><label>Auteur</label><input id="fAuteur" autocomplete="off"></div>
+        <div class="row"><label>Date (AAAA ou AAAA-AAAA)</label><input id="fDate" autocomplete="off" placeholder="2009 ou 1993-1996"></div>
+        <div class="row"><label>Famille</label>
+          <select id="fFamille">
+            <option>Graphisme</option><option>Objet</option><option>Espace</option><option>Mode</option>
+          </select>
+        </div>
+      </div>
+
+      <footer>
+        <div class="help">ID : <code id="idLabel">—</code> (dérivé du nom de fichier)</div>
+        <div style="display:flex;gap:8px">
+          <button id="btnSave" class="primary">Enregistrer</button>
+        </div>
+      </footer>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ===========================
+   ÉTAT + HELPERS GÉNÉRAUX
+   =========================== */
+let data = [];  // { id, titre, auteur, date, image, famille }
+let sel = null;
+const el = (s)=>document.querySelector(s);
+const families = ["Graphisme","Objet","Espace","Mode"];
+const norm = s => String(s ?? '').trim();
+const slug = s => String(s||"")
+  .normalize('NFD').replace(/[\u0300-\u036f]/g,"")
+  .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+
+const idRe = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const stemFromPath = (p)=> String(p||'').split(/[/\\]/).pop().replace(/\.[a-z0-9]+$/i,'');
+function makeIdFromImage(imagePath){
+  let base = slug(stemFromPath(imagePath)) || 'item';
+  // unicité
+  const taken = new Set(data.map(c=>c.id));
+  let id = base, i = 2;
+  while (taken.has(id)) id = `${base}-${i++}`;
+  return id;
+}
+function renderCount(){ el('#count').textContent = `${filtered().length} élément${filtered().length>1?'s':''}`; }
+
+/* ===========================
+   IMPORT / EXPORT
+   =========================== */
+el('#btnImport').onclick = async ()=>{
+  const f = el('#fileJson').files?.[0];
+  if(!f){ alert("Choisis un fichier JSON."); return; }
+  const t = await f.text();
+  try{
+    const j = JSON.parse(t);
+    if(!Array.isArray(j)) throw 0;
+    data = j.map((x,i)=>{
+      const image   = norm(x.image ?? '');
+      const titre   = norm(x.titre ?? '');
+      const auteur  = norm(x.auteur ?? '');
+      const date    = norm(x.date ?? '');
+      const famille = families.includes(x.famille) ? x.famille : 'Graphisme';
+      // RÈGLE : si image présente → id dérivé du nom de fichier (unique)
+      let id = image ? makeIdFromImage(image) : norm(x.id ?? '');
+      if (!id) id = slug(titre) || `item-${i+1}`;
+      return { id, titre, auteur, date, image, famille };
+    });
+    sel = null; renderList(); openNone();
+  }catch(e){ alert("JSON invalide."); }
+};
+
+el('#btnExport').onclick = ()=>exportJSON();
+function exportJSON(){
+  // validations
+  for(const c of data){
+    if(!c.image || !c.titre) return alert(`Titre & image requis pour « ${c.titre||c.id||'?'} »`);
+    if(c.date && !/^(\d{4})(-(\d{4}))?$/.test(c.date)) return alert(`Date invalide pour « ${c.titre||c.id} »`);
+    if(!families.includes(c.famille)) return alert(`Famille invalide pour « ${c.titre||c.id} »`);
+    if(!idRe.test(c.id)) return alert(`ID invalide pour « ${c.titre||c.id} »`);
+  }
+  // unicité
+  const ids = data.map(c=>c.id);
+  if(new Set(ids).size !== ids.length) return alert("Certains IDs sont dupliqués.");
+
+  // schéma strict + ordre des clés
+  const clean = data.map(({id,titre,auteur,date,image,famille})=>({id,titre,auteur,date,image,famille}));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(clean, null, 2)],{type:'application/json'}));
+  a.download = 'cards.json'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ===========================
+   LISTE + FILTRES + DnD
+   =========================== */
+el('#q').oninput = renderList;
+el('#fam').onchange = renderList;
+function filtered(){
+  const q = norm(el('#q').value).toLowerCase();
+  const fam = el('#fam').value;
+  return data.map((x,i)=>({x,i})).filter(({x})=>{
+    const okQ = !q || [x.titre,x.auteur,x.date,x.id].some(v=>String(v).toLowerCase().includes(q));
+    const okF = !fam || x.famille===fam;
+    return okQ && okF;
+  });
+}
+function renderList(){
+  const L = el('#list'); L.innerHTML='';
+  filtered().forEach(({x,i})=>{
+    const row = document.createElement('div'); row.className='item'; row.draggable=true; row.dataset.i=i;
+    row.innerHTML = `
+      <div class="thumb">${x.image?`<img src="${x.image}">`:'📄'}</div>
+      <div class="meta">
+        <div class="title">${x.titre || 'Sans titre'}</div>
+        <div class="sub">
+          <code class="pill">${x.id}</code>
+          <span>${x.auteur || 'Auteur inconnu'}</span>
+          <span class="pill">${x.famille}</span>
+        </div>
+      </div>`;
+    row.onclick = ()=>openIndex(i);
+    row.addEventListener('dragstart', e=>{ row.classList.add('dragging'); e.dataTransfer.setData('text/plain', i); });
+    row.addEventListener('dragend', ()=>row.classList.remove('dragging'));
+    L.appendChild(row);
+  });
+  // réordonnancement par glisser/déposer
+  L.ondragover = (e)=>{ e.preventDefault();
+    const dragging = L.querySelector('.dragging'); if(!dragging) return;
+    const after = Array.from(L.querySelectorAll('.item:not(.dragging)')).find(it=>{
+      const r = it.getBoundingClientRect(); return e.clientY < r.top + r.height/2;
+    });
+    if(after) L.insertBefore(dragging, after); else L.appendChild(dragging);
+  };
+  L.ondrop = (e)=>{ e.preventDefault();
+    const order = Array.from(L.children).map(ch => +ch.dataset.i);
+    data = order.map(i => data[i]);
+    renderList();
+  };
+  renderCount();
+}
+
+/* ===========================
+   ÉDITION
+   =========================== */
+function openNone(){
+  el('#editor .empty').style.display='block';
+  el('#form').style.display='none';
+  sel = null;
+}
+function openIndex(i){
+  sel = i;
+  const c = data[i];
+  el('#editor .empty').style.display='none';
+  el('#form').style.display='block';
+  el('#fTitre').value   = c.titre;
+  el('#fAuteur').value  = c.auteur;
+  el('#fDate').value    = c.date;
+  el('#fFamille').value = c.famille;
+  el('#fImage').value   = c.image;
+  el('#prev').src       = c.image || '';
+  el('#idLabel').textContent = c.id;
+}
+function saveForm(){
+  if(sel===null) return;
+  const c = data[sel];
+  c.titre   = norm(el('#fTitre').value);
+  c.auteur  = norm(el('#fAuteur').value);
+  c.date    = norm(el('#fDate').value);
+  c.famille = el('#fFamille').value;
+  c.image   = norm(el('#fImage').value);
+  if (c.image){ c.id = makeIdFromImage(c.image); el('#idLabel').textContent = c.id; }
+  renderList();
+}
+el('#btnSave').onclick = saveForm;
+
+/* ===========================
+   CRUD
+   =========================== */
+el('#btnAdd').onclick = ()=>{
+  const c = { id:'item', titre:'', auteur:'', date:'', image:'', famille:'Graphisme' };
+  data.push(c); renderList(); openIndex(data.length-1);
+};
+el('#btnDuplicate').onclick = ()=>{
+  if(sel===null){ alert("Sélectionne d’abord une carte."); return; }
+  const src = data[sel];
+  const dup = JSON.parse(JSON.stringify(src));
+  // image identique -> id unique auto au prochain save; on peut aussi forcer tout de suite :
+  if (dup.image) dup.id = makeIdFromImage(dup.image);
+  data.splice(sel+1,0,dup); renderList(); openIndex(sel+1);
+};
+el('#btnDelete').onclick = ()=>{
+  if(sel===null){ alert("Sélectionne d’abord une carte."); return; }
+  if(!confirm("Supprimer cette carte ?")) return;
+  data.splice(sel,1); renderList(); openNone();
+};
+
+/* ===========================
+   IMAGE (fichier / saisie)
+   =========================== */
+el('#btnPickFile').onclick = ()=> el('#fileImg').click();
+el('#fileImg').onchange = ()=>{
+  const f = el('#fileImg').files?.[0]; if(!f) return;
+  // propose un chemin relatif "assets/images/<nom-du-fichier>"
+  const rel = `assets/images/${f.name}`;
+  el('#fImage').value = rel;
+  el('#prev').src = URL.createObjectURL(f);
+  if (sel !== null) {
+    const c = data[sel];
+    c.image = norm(rel);
+    c.id = makeIdFromImage(c.image);
+    el('#idLabel').textContent = c.id;
+    renderList();
+  }
+};
+el('#fImage').addEventListener('input', ()=>{ el('#prev').src = el('#fImage').value; });
+el('#fImage').addEventListener('blur', ()=>{
+  if (sel === null) return;
+  const c = data[sel];
+  c.image = norm(el('#fImage').value);
+  if (c.image) {
+    c.id = makeIdFromImage(c.image);
+    el('#idLabel').textContent = c.id;
+  }
+  renderList();
+});
+
+/* ===========================
+   RACCOURCIS CLAVIER
+   =========================== */
+document.addEventListener('keydown', (e)=>{
+  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); exportJSON(); }
+});
+
+/* ===========================
+   DÉMARRAGE
+   =========================== */
+renderList();
+openNone();
+</script>
+</body>
+</html>
