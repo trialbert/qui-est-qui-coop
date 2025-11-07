@@ -139,22 +139,21 @@
     </div>
   </div>
 
-  <!-- 1) Client Socket.IO : doit être AVANT ton script -->
-  <script src="/socket.io/socket.io.js"></script>
+    <!-- Socket.io client (CDN) -->
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"
+          integrity="sha384-Pi0CwqA8a1B1HsCdO4xxbwpBaguaWN9gA0aDj8BLGdXtRaGQ+TfgY1zD+O2x3Dyx"
+          crossorigin="anonymous"></script>
 
-  <!-- 2) Pastille présence (z-index très haut pour être visible par-dessus le plateau) -->
-  <div id="presence-pill">
-  Connectés : <span id="presence-count">0</span>
-</div>
-
+  <!-- Ton script principal, chargé UNE SEULE FOIS -->
   <script defer src="script.js"></script>
+
   <!-- Gate mobile (affiché seulement sur mobile / écran étroit) -->
-<div id="mobileGate" class="mobile-gate" role="dialog" aria-modal="true" aria-live="polite">
-  <div class="mobile-gate__content">
-    <h2>Qui est qui ? | Culture design est disponible sur ordinateur 🖥️</h2>
-    <p>Pour profiter pleinement du jeu, utilisez un écran plus grand.</p>
-    <p><small>🤫 La version mobile est en cours de développement.</small></p>
+  <div id="mobileGate" class="mobile-gate" role="dialog" aria-modal="true" aria-live="polite">
+    <div class="mobile-gate__content">
+      <h2>Qui est qui ? | Culture design est disponible sur ordinateur 🖥️</h2>
+      <p>Pour profiter pleinement du jeu, utilisez un écran plus grand.</p>
+      <p><small>🤫 La version mobile est en cours de développement.</small></p>
+    </div>
   </div>
-</div>
 </body>
 </html>

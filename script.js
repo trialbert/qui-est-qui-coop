@@ -1234,7 +1234,9 @@ loadCards();
   }
 
   // 2) Un socket global par onglet
-  const socket = io();
+  const socket = io("https://qui-est-qui-coop.onrender.com", {
+  transports: ["websocket", "polling"]
+});
   window.socketCollab = socket; // <-- on le stocke ici pour le reste du code
 
   let selfId = null;
