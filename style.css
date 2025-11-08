@@ -614,7 +614,7 @@ body.light .family-progress { color: #222; }
   align-items: center;
   justify-content: center;
   transition: background .2s, transform .2s;
-  z-index: 100;
+  z-index: 59;
 }
 .coop-btn {
   background: #00aaff;
