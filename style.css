@@ -818,7 +818,7 @@ body.light .draw-zone {
   justify-content: center;
   padding: 24px;
   z-index: 99999;                /* au-dessus de tout (intro-modal incluse) */
-  background: rgba(0,0,0,.75);
+  background: #1d6b59;
   text-align: center;
 }
 .mobile-gate__content{
@@ -827,7 +827,6 @@ body.light .draw-zone {
   color: #222;
   border-radius: 16px;
   padding: 22px 24px;
-  box-shadow: 0 10px 30px rgba(0,0,0,.35);
 }
 body.light .mobile-gate{ background: rgba(0,0,0,.6); }
 body.light .mobile-gate__content{ background: #fff; color: #222; }
@@ -921,7 +920,7 @@ body.mobile-block .mobile-gate{ display: flex; }
   display: flex;
   align-items: center;
   gap: 8px;
-  z-index: 1000;
+  z-index: 59;
 }
 
 /* Pastille joueurs connectés */
