@@ -1234,9 +1234,7 @@ loadCards();
   }
 
   // 2) Un socket global par onglet
-  const socket = io("https://qui-est-qui-coop.onrender.com", {
-  transports: ["websocket", "polling"]
-});
+  const socket = io();
   window.socketCollab = socket; // <-- on le stocke ici pour le reste du code
 
   let selfId = null;
@@ -1557,10 +1555,47 @@ loadCards();
     window.socketCollab.emit('cursor:move', { x, y });
   });
 
-  window.addEventListener('blur', () => {
+    window.addEventListener('blur', () => {
     if (window.socketCollab) {
       window.socketCollab.emit('cursor:hide', {});
     }
   });
+}); // ← ici, on FERME la fonction mais on NE la lance plus tout de suite
 
-})();
+// --- MODE COOP (activation / désactivation) ---
+const coopButton = document.getElementById("coopToggle");
+let coopActive = false;
+let socketInstance = null;
+
+coopButton.addEventListener("click", () => {
+  if (!coopActive) {
+    // Activation
+    coopActive = true;
+    coopButton.classList.add("active");
+    coopButton.textContent = "Quitter Coop";
+    console.log("[coop] Activation du mode coop…");
+
+    // Démarre la coopération
+    socketInstance = initCollabSimple();
+  } else {
+    // Désactivation
+    coopActive = false;
+    coopButton.classList.remove("active");
+    coopButton.textContent = "Mode Coop";
+    console.log("[coop] Retour au mode solo.");
+
+    // Fermer la connexion Socket.io
+    if (window.socketCollab) {
+      window.socketCollab.disconnect();
+      window.socketCollab = null;
+    }
+
+    // Supprimer les curseurs distants affichés
+    document.querySelectorAll(".remote-cursor").forEach(el => el.remove());
+
+    // Optionnel : remettre le compteur de présence à 1
+    const el = document.getElementById("presence-count");
+    if (el) el.textContent = "1";
+  }
+  return socket;
+});
