@@ -1226,54 +1226,47 @@ loadCards();
 
 // ============ COOP SIMPLE ============
 
-(function initCollabSimple() {
+// petite fonction neutre pour éviter une erreur si on l'appelle
+function initPseudoUI() {
+  // UI pseudos désactivée pour le moment
+}
+
+function initCollabSimple() {
   // 1) Vérifier que Socket.IO est disponible
   if (!window.io) {
-    console.warn('[collab] io() indisponible. Vérifie <script src="/socket.io/socket.io.js"> avant script.js');
+    console.warn('[collab] io() indisponible. Vérifie <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"> avant script.js');
     return;
   }
 
   // 2) Un socket global par onglet
-  const socket = io();
+  const socket = io("https://qui-est-qui-coop.onrender.com", {
+    transports: ["websocket", "polling"]
+  });
   window.socketCollab = socket; // <-- on le stocke ici pour le reste du code
 
   let selfId = null;
   const remoteCursors = {}; // { socketId: HTMLElement }
   const peers = {};        // { socketId: { name, color } }
 
-    function getOrCreateCursor(id, color) {
-  let el = remoteCursors[id];
-  if (!el) {
-    el = document.createElement('div');
-    el.className = 'remote-cursor';
-    el.innerHTML = `<span class="remote-cursor-dot"></span>`;
-    document.body.appendChild(el);
-    remoteCursors[id] = el;
-  }
-  const dot = el.querySelector('.remote-cursor-dot');
-  if (dot && color) {
-    dot.style.backgroundColor = color;
-  }
-  return el;
-}
-
   function getOrCreateCursor(id, color, name) {
-  let el = remoteCursors[id];
-  if (!el) {
-    el = document.createElement('div');
-    el.className = 'remote-cursor';
-    el.innerHTML = `
-      <span class="remote-cursor-dot" style="background:${color}"></span>
-      <span class="remote-cursor-label">${name}</span>
-    `;
-    document.body.appendChild(el);
-    remoteCursors[id] = el;
-  } else {
-    el.querySelector('.remote-cursor-dot').style.background = color;
-    el.querySelector('.remote-cursor-label').textContent = name;
+    let el = remoteCursors[id];
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'remote-cursor';
+      el.innerHTML = `
+        <span class="remote-cursor-dot" style="background:${color}"></span>
+        <span class="remote-cursor-label">${name || ''}</span>
+      `;
+      document.body.appendChild(el);
+      remoteCursors[id] = el;
+    } else {
+      const dot = el.querySelector('.remote-cursor-dot');
+      const label = el.querySelector('.remote-cursor-label');
+      if (dot && color) dot.style.background = color;
+      if (label && name) label.textContent = name;
+    }
+    return el;
   }
-  return el;
-}
 
   // 3) Connexion + pseudo
   socket.on('connect', () => {
@@ -1377,7 +1370,7 @@ loadCards();
     }
   });
 
-    // Carte remise dans la pioche par un autre joueur
+  // Carte remise dans la pioche par un autre joueur
   socket.on('draw:moved', ({ cardId, posX, posY }) => {
     console.log('[collab] draw:moved reçu', cardId, 'at', posX, posY);
 
@@ -1484,30 +1477,31 @@ loadCards();
     }
 
     // Si la carte est ouverte en zoom sur cet onglet, rafraîchir l’overlay
-    if (currentCardId === cardId) {
+    if (window.currentCardId === cardId && typeof setFoundInfoFromState === 'function' && typeof renderProgressDots === 'function') {
       setFoundInfoFromState(cardId);
       renderProgressDots(cardId);
     }
 
-    applyCompletionClasses();
-    updateScore();
+    if (typeof applyCompletionClasses === 'function') applyCompletionClasses();
+    if (typeof updateScore === 'function') updateScore();
   });
 
   // 🔁 Curseurs des autres joueurs (déplacés AU NIVEAU GLOBAL)
   socket.on('cursor:move', ({ id, x, y, color, name }) => {
-  if (!id || id === selfId) return;
+    if (!id || id === selfId) return;
 
-  const info = peers[id] || {};
-  const finalColor = color || info.color || '#ffffff';
-  peers[id] = { name, color: finalColor };
+    const info = peers[id] || {};
+    const finalColor = color || info.color || '#ffffff';
+    const finalName  = name || info.name || '';
+    peers[id] = { name: finalName, color: finalColor };
 
-  const el = getOrCreateCursor(id, finalColor);
-  const px = x * window.innerWidth;
-  const py = y * window.innerHeight;
-  el.style.left = px + 'px';
-  el.style.top  = py + 'px';
-  el.style.display = 'block';
-});
+    const el = getOrCreateCursor(id, finalColor, finalName);
+    const px = x * window.innerWidth;
+    const py = y * window.innerHeight;
+    el.style.left = px + 'px';
+    el.style.top  = py + 'px';
+    el.style.display = 'block';
+  });
 
   socket.on('cursor:hide', ({ id }) => {
     const el = remoteCursors[id];
@@ -1555,47 +1549,47 @@ loadCards();
     window.socketCollab.emit('cursor:move', { x, y });
   });
 
-    window.addEventListener('blur', () => {
+  window.addEventListener('blur', () => {
     if (window.socketCollab) {
       window.socketCollab.emit('cursor:hide', {});
     }
   });
-}); // ← ici, on FERME la fonction mais on NE la lance plus tout de suite
+}
 
 // --- MODE COOP (activation / désactivation) ---
-const coopButton = document.getElementById("coopToggle");
-let coopActive = false;
-let socketInstance = null;
+document.addEventListener('DOMContentLoaded', () => {
+  const coopButton = document.getElementById("coopToggle");
+  if (!coopButton) return;
 
-coopButton.addEventListener("click", () => {
-  if (!coopActive) {
-    // Activation
-    coopActive = true;
-    coopButton.classList.add("active");
-    coopButton.textContent = "Quitter Coop";
-    console.log("[coop] Activation du mode coop…");
+  let coopActive = false;
 
-    // Démarre la coopération
-    socketInstance = initCollabSimple();
-  } else {
-    // Désactivation
-    coopActive = false;
-    coopButton.classList.remove("active");
-    coopButton.textContent = "Mode Coop";
-    console.log("[coop] Retour au mode solo.");
+  coopButton.addEventListener("click", () => {
+    if (!coopActive) {
+      // 🧩 Activation
+      coopActive = true;
+      coopButton.classList.add("active");
+      coopButton.textContent = "❌ Quitter le mode coop";
+      console.log("[coop] Activation du mode coop…");
+      initCollabSimple(); // démarre la connexion Socket.io
+    } else {
+      // ❌ Désactivation
+      coopActive = false;
+      coopButton.classList.remove("active");
+      coopButton.textContent = "🧩 Coop";
+      console.log("[coop] Retour au mode solo.");
 
-    // Fermer la connexion Socket.io
-    if (window.socketCollab) {
-      window.socketCollab.disconnect();
-      window.socketCollab = null;
+      // Fermer la connexion Socket.io
+      if (window.socketCollab) {
+        window.socketCollab.disconnect();
+        window.socketCollab = null;
+      }
+
+      // Supprimer les curseurs distants affichés
+      document.querySelectorAll(".remote-cursor").forEach(el => el.remove());
+
+      // Optionnel : remettre le compteur à 1
+      const el = document.getElementById("presence-count");
+      if (el) el.textContent = "1";
     }
-
-    // Supprimer les curseurs distants affichés
-    document.querySelectorAll(".remote-cursor").forEach(el => el.remove());
-
-    // Optionnel : remettre le compteur de présence à 1
-    const el = document.getElementById("presence-count");
-    if (el) el.textContent = "1";
-  }
-  return socket;
+  });
 });

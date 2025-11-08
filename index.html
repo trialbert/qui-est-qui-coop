@@ -139,24 +139,26 @@
     </div>
   </div>
 
-  <!-- 1) Client Socket.IO : doit être AVANT ton script -->
-  <script src="/socket.io/socket.io.js"></script>
-
   <div id="coopBar">
-  <button id="coopToggle" class="coop-btn" title="Activer le mode coop">Mode Coop</button>
-  <div id="presence-pill">
-    👥 Connectés : <span id="presence-count">1</span>
+    <button id="coopToggle" class="coop-btn" title="Activer le mode coop">🧩 Coop</button>
+    <div id="presence-pill">
+      Connectés : <span id="presence-count">0</span>
+    </div>
   </div>
-</div>
 
-  <script defer src="script.js"></script>
-  <!-- Gate mobile (affiché seulement sur mobile / écran étroit) -->
-<div id="mobileGate" class="mobile-gate" role="dialog" aria-modal="true" aria-live="polite">
-  <div class="mobile-gate__content">
-    <h2>Qui est qui ? | Culture design est disponible sur ordinateur 🖥️</h2>
-    <p>Pour profiter pleinement du jeu, utilisez un écran plus grand.</p>
-    <p><small>🤫 La version mobile est en cours de développement.</small></p>
+  <!-- Socket.io client via CDN -->
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+
+  <!-- Ton script principal -->
+  <script src="script.js"></script>
+
+  <!-- Gate mobile -->
+  <div id="mobileGate" class="mobile-gate" role="dialog" aria-modal="true" aria-live="polite">
+    <div class="mobile-gate__content">
+      <h2>Qui est qui ? | Culture design est disponible sur ordinateur 🖥️</h2>
+      <p>Pour profiter pleinement du jeu, utilisez un écran plus grand.</p>
+      <p><small>🤫 La version mobile est en cours de développement.</small></p>
+    </div>
   </div>
-</div>
 </body>
 </html>
