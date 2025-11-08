@@ -1248,22 +1248,19 @@ function initCollabSimple() {
   const remoteCursors = {}; // { socketId: HTMLElement }
   const peers = {};        // { socketId: { name, color } }
 
-  function getOrCreateCursor(id, color, name) {
+  function getOrCreateCursor(id, color) {
     let el = remoteCursors[id];
     if (!el) {
       el = document.createElement('div');
       el.className = 'remote-cursor';
       el.innerHTML = `
         <span class="remote-cursor-dot" style="background:${color}"></span>
-        <span class="remote-cursor-label">${name || ''}</span>
       `;
       document.body.appendChild(el);
       remoteCursors[id] = el;
     } else {
       const dot = el.querySelector('.remote-cursor-dot');
-      const label = el.querySelector('.remote-cursor-label');
       if (dot && color) dot.style.background = color;
-      if (label && name) label.textContent = name;
     }
     return el;
   }
@@ -1568,14 +1565,14 @@ document.addEventListener('DOMContentLoaded', () => {
       // 🧩 Activation
       coopActive = true;
       coopButton.classList.add("active");
-      coopButton.textContent = "❌ Quitter le mode coop";
+      coopButton.textContent = "Quitter le mode coop";
       console.log("[coop] Activation du mode coop…");
       initCollabSimple(); // démarre la connexion Socket.io
     } else {
       // ❌ Désactivation
       coopActive = false;
       coopButton.classList.remove("active");
-      coopButton.textContent = "🧩 Coop";
+      coopButton.textContent = "Mode coop";
       console.log("[coop] Retour au mode solo.");
 
       // Fermer la connexion Socket.io
