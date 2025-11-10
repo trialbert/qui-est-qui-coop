@@ -1603,32 +1603,36 @@ document.addEventListener('DOMContentLoaded', () => {
   let coopActive = false;
 
   coopButton.addEventListener("click", () => {
-    if (!coopActive) {
-      // 🧩 Activation
-      coopActive = true;
-      coopButton.classList.add("active");
-      coopButton.textContent = "Quitter le mode coop";
-      console.log("[coop] Activation du mode coop…");
-      initCollabSimple(); // démarre la connexion Socket.io
-    } else {
-      // ❌ Désactivation
-      coopActive = false;
-      coopButton.classList.remove("active");
-      coopButton.textContent = "Mode coop";
-      console.log("[coop] Retour au mode solo.");
+  if (!coopActive) {
+    // 🧩 Activation
+    coopActive = true;
+    coopButton.classList.add("active");
+    coopButton.textContent = "Quitter le mode coop";
+    console.log("[coop] Activation du mode coop…");
+    initCollabSimple(); // démarre la connexion Socket.io
+  } else {
+    // ❌ Désactivation
+    coopActive = false;
+    coopButton.classList.remove("active");
+    coopButton.textContent = "Mode coop";
+    console.log("[coop] Retour au mode solo.");
 
-      // Fermer la connexion Socket.io
-      if (window.socketCollab) {
-        window.socketCollab.disconnect();
-        window.socketCollab = null;
-      }
-
-      // Supprimer les curseurs distants affichés
-      document.querySelectorAll(".remote-cursor").forEach(el => el.remove());
-
-      // Optionnel : remettre le compteur à 1
-      const el = document.getElementById("presence-count");
-      if (el) el.textContent = "1";
+    // Fermer la connexion Socket.io
+    if (window.socketCollab) {
+      window.socketCollab.disconnect();
+      window.socketCollab = null;
     }
-  });
+
+    // Supprimer les curseurs distants affichés
+    document.querySelectorAll(".remote-cursor").forEach(el => el.remove());
+
+    // Remettre la pastille en mode "Offline"
+    const el = document.getElementById("presence-count");
+    if (el) {
+      el.textContent = "Offline";
+      el.style.opacity = 0.7;
+    }
+  }
+});
+
 });
