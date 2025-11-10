@@ -595,6 +595,12 @@ body.light .family-progress { color: #222; }
   to   { transform: scaleX(0); }  /* voile disparu = bouton disponible */
 }
 
+/* effet visuel pendant l'appui long sur le bouton reset */
+#resetBtn.reset-hold {
+  transform: scale(0.97);
+  filter: brightness(0.8);
+  transition: transform 0.1s, filter 0.1s;
+}
 
 /* Style commun */
 .info-btn,

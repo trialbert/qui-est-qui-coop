@@ -757,29 +757,60 @@ document.getElementById('giveUpBtn').addEventListener('click',giveUp);
 document.getElementById('answerInput').addEventListener('keydown',(e)=>{ if(e.key==='Enter') validateCurrent(); });
 
 /* =========================
-   RESET (GOMME)
+   RESET (GOMME) - APPUI LONG
    ========================= */
-document.getElementById('resetBtn').addEventListener('click', async () => {
-  if (!confirm('Réinitialiser toutes les réponses et remélanger les cartes ?')) return;
+const resetBtn = document.getElementById('resetBtn');
 
-  // 1️⃣ Reset local (ton comportement actuel)
-  await shuffleDeck(false); // reset complet + mélange
+if (resetBtn) {
+  const HOLD_DURATION = 2000; // 2 secondes d'appui continu
+  let holdTimer = null;
 
-  // 2️⃣ Prévenir les autres joueurs (coop)
-  if (window.socketCollab) {
-    console.log('[collab] emit reset');
-    window.socketCollab.emit('reset');
+  async function triggerSharedReset() {
+    // 1️⃣ Reset local (ton comportement actuel)
+    await shuffleDeck(false); // reset complet + mélange
+
+    // 2️⃣ Prévenir les autres joueurs (coop)
+    if (window.socketCollab) {
+      console.log('[collab] emit reset');
+      window.socketCollab.emit('reset');
+    }
   }
-});
 
-// 3️⃣ Quand un autre joueur demande un reset
-if (window.socketCollab) {
-  window.socketCollab.on('reset', async () => {
-    console.log('[collab] reset reçu (depuis un autre joueur)');
-    await shuffleDeck(false);
-  });
+  function startHold(e) {
+    e.preventDefault();
+
+    if (holdTimer) return; // déjà en cours
+    resetBtn.classList.add('reset-hold');
+
+    holdTimer = setTimeout(async () => {
+      holdTimer = null;
+      resetBtn.classList.remove('reset-hold');
+
+      const ok = confirm('Réinitialiser toutes les réponses et remélanger les cartes pour tout le monde ?');
+      if (!ok) return;
+
+      await triggerSharedReset();
+    }, HOLD_DURATION);
+  }
+
+  function cancelHold() {
+    if (holdTimer) {
+      clearTimeout(holdTimer);
+      holdTimer = null;
+    }
+    resetBtn.classList.remove('reset-hold');
+  }
+
+  // Souris
+  resetBtn.addEventListener('mousedown', startHold);
+  resetBtn.addEventListener('mouseup', cancelHold);
+  resetBtn.addEventListener('mouseleave', cancelHold);
+
+  // Tactile
+  resetBtn.addEventListener('touchstart', startHold);
+  resetBtn.addEventListener('touchend', cancelHold);
+  resetBtn.addEventListener('touchcancel', cancelHold);
 }
-
 
 /* =========================
    THÈME (bouton SVG)
