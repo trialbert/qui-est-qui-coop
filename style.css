@@ -987,3 +987,7 @@ body.mobile-block .mobile-gate{ display: flex; }
   80%  { transform: translateX(2px); }
   100% { transform: translateX(0); }
 }
+#presence-pill {
+  min-width: 120px;
+  text-align: center;
+}

@@ -1226,6 +1226,12 @@ loadCards();
 
 // ============ COOP SIMPLE ============
 
+// Dès le chargement, afficher "Offline" par défaut
+document.addEventListener('DOMContentLoaded', () => {
+  const el = document.getElementById('presence-count');
+  if (el) el.textContent = "Offline";
+});
+
 // petite fonction neutre pour éviter une erreur si on l'appelle
 function initPseudoUI() {
   // UI pseudos désactivée pour le moment
@@ -1307,7 +1313,6 @@ function initCollabSimple() {
       coopButton.classList.add('full');
       coopButton.title = "Mode coop complet (20/20 joueurs)";
     } else {
-      // encore de la place
       coopButton.disabled = false;
       coopButton.classList.remove('full');
       coopButton.title = "Activer le mode coop";
