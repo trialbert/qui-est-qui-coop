@@ -511,7 +511,9 @@ function enableDragAndDrop(){
             cardId,
             family: famKey,
             posX,
-            posY
+            posY,
+            xPct,
+            yPct
           });
         } else if (progress[cardId]?.inDraw) {
           // carte en pioche
@@ -519,7 +521,9 @@ function enableDragAndDrop(){
           socket.emit('moveToDraw', {
             cardId,
             posX,
-            posY
+            posY,
+            xPct,
+            yPct
           });
         }
       }
@@ -1380,8 +1384,8 @@ function initCollabSimple() {
   }
 
   // 7) Appliquer les moves reçus des autres joueurs (sans toucher au parent DOM)
-  socket.on('moved', ({ cardId, family, posX, posY }) => {
-    console.log('[collab] moved reçu', cardId, '→', family, 'at', posX, posY);
+  socket.on('moved', ({ cardId, family, posX, posY, xPct, yPct }) => {
+  console.log('[collab] moved reçu', cardId, '→', family, 'at', posX, posY, 'pct', xPct, yPct);
 
     const card  = findCard(cardId);
     const zone  = findFamilyZone(family);
@@ -1391,15 +1395,24 @@ function initCollabSimple() {
     const boardRect = board.getBoundingClientRect();
     const cardRect  = card.getBoundingClientRect();
 
-    let finalX = posX;
-    let finalY = posY;
+    let finalX, finalY;
 
-    // Si jamais les coords ne sont pas fournies, on retombe sur le centrage
-    if (typeof finalX !== 'number' || typeof finalY !== 'number') {
-      const zoneRect = zone.getBoundingClientRect();
-      finalX = zoneRect.left + zoneRect.width  / 2 - boardRect.left - cardRect.width  / 2;
-      finalY = zoneRect.top  + zoneRect.height / 2 - boardRect.top  - cardRect.height / 2;
-    }
+    // priorité aux pourcentages si présents (résolution-indépendant)
+  if (typeof xPct === 'number' && typeof yPct === 'number' && typeof toPxFromPct === 'function') {
+    const coords = toPxFromPct(xPct, yPct, boardRect);
+    finalX = coords.x;
+    finalY = coords.y;
+  } else {
+    finalX = posX;
+    finalY = posY;
+  }
+    
+    // Si malgré tout on n'a rien, on retombe sur le centrage dans la zone
+  if (typeof finalX !== 'number' || typeof finalY !== 'number') {
+    const zoneRect = zone.getBoundingClientRect();
+    finalX = zoneRect.left + zoneRect.width  / 2 - boardRect.left - cardRect.width  / 2;
+    finalY = zoneRect.top  + zoneRect.height / 2 - boardRect.top  - cardRect.height / 2;
+  }
 
     card.style.left = finalX + 'px';
     card.style.top  = finalY + 'px';
@@ -1441,8 +1454,8 @@ function initCollabSimple() {
   });
 
   // Carte remise dans la pioche par un autre joueur
-  socket.on('draw:moved', ({ cardId, posX, posY }) => {
-    console.log('[collab] draw:moved reçu', cardId, 'at', posX, posY);
+  socket.on('draw:moved', ({ cardId, posX, posY, xPct, yPct }) => {
+  console.log('[collab] draw:moved reçu', cardId, 'at', posX, posY, 'pct', xPct, yPct);
 
     const card  = findCard(cardId);
     const board = document.getElementById('board');
@@ -1450,22 +1463,30 @@ function initCollabSimple() {
     if (!card || !board) return;
 
     const boardRect = board.getBoundingClientRect();
-    let finalX = posX;
-    let finalY = posY;
+  let finalX, finalY;
+
+    if (typeof xPct === 'number' && typeof yPct === 'number' && typeof toPxFromPct === 'function') {
+    const coords = toPxFromPct(xPct, yPct, boardRect);
+    finalX = coords.x;
+    finalY = coords.y;
+  } else {
+    finalX = posX;
+    finalY = posY;
+  }
 
     // fallback : si pas de coords, on recalcule comme snapToDraw
-    if (typeof finalX !== 'number' || typeof finalY !== 'number') {
-      if (draw) {
-        const dr = draw.getBoundingClientRect();
-        const xCenter = dr.left - boardRect.left + (dr.width  - card.offsetWidth)/2;
-        const yCenter = dr.top  - boardRect.top  + (dr.height - card.offsetHeight)/2;
-        finalX = xCenter;
-        finalY = yCenter;
-      } else {
-        finalX = boardRect.width/2  - card.offsetWidth/2;
-        finalY = boardRect.height/2 - card.offsetHeight/2;
-      }
+  if (typeof finalX !== 'number' || typeof finalY !== 'number') {
+    if (draw) {
+      const dr = draw.getBoundingClientRect();
+      const xCenter = dr.left - boardRect.left + (dr.width  - card.offsetWidth)/2;
+      const yCenter = dr.top  - boardRect.top  + (dr.height - card.offsetHeight)/2;
+      finalX = xCenter;
+      finalY = yCenter;
+    } else {
+      finalX = boardRect.width/2  - card.offsetWidth/2;
+      finalY = boardRect.height/2 - card.offsetHeight/2;
     }
+  }
 
     card.style.left = finalX + 'px';
     card.style.top  = finalY + 'px';

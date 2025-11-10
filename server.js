@@ -78,11 +78,11 @@ io.on("connection", (socket) => {
   const currentCount = io.of("/").sockets.size;
 
   if (currentCount > MAX_PLAYERS) { // ✅ autorise le 20e joueur, bloque à partir du 21e
-  console.log(`⚠️ Connexion refusée (${currentCount}/${MAX_PLAYERS})`);
-  socket.emit("server:full", { max: MAX_PLAYERS });
-  socket.disconnect(true);
-  return;
-}
+    console.log(`⚠️ Connexion refusée (${currentCount}/${MAX_PLAYERS})`);
+    socket.emit("server:full", { max: MAX_PLAYERS });
+    socket.disconnect(true);
+    return;
+  }
 
   console.log("🔌 Nouveau client", socket.id);
   ensurePlayer(socket.id);
@@ -100,10 +100,10 @@ io.on("connection", (socket) => {
     socket.emit("players:init", players);
   });
 
-  // Déplacement d'une carte dans une famille
-  socket.on("moveToFamily", ({ cardId, family, posX, posY }) => {
+  // ✅ Déplacement d'une carte dans une famille (avec positions %)
+  socket.on("moveToFamily", ({ cardId, family, posX, posY, xPct, yPct }) => {
+    console.log("➡️ moveToFamily", cardId, "→", family, "de", socket.id, "at", posX, posY, "pct", xPct, yPct);
     if (!cardId || !family) return;
-    console.log("➡️ moveToFamily", cardId, "→", family, "de", socket.id);
 
     // retirer la carte de toutes les familles
     Object.keys(state.families).forEach((f) => {
@@ -118,15 +118,15 @@ io.on("connection", (socket) => {
       state.families[family].push(cardId);
     }
 
-    // informer les autres clients
-    socket.broadcast.emit("moved", { cardId, family, posX, posY });
+    // informer les autres clients avec les positions en %
+    socket.broadcast.emit("moved", { cardId, family, posX, posY, xPct, yPct });
     io.emit("counters", recomputeCounters());
   });
 
-  // Carte remise dans la pioche
-  socket.on("moveToDraw", ({ cardId, posX, posY }) => {
+  // ✅ Carte remise dans la pioche (avec positions %)
+  socket.on("moveToDraw", ({ cardId, posX, posY, xPct, yPct }) => {
     if (!cardId) return;
-    console.log("🎯 moveToDraw", cardId, "de", socket.id);
+    console.log("🎯 moveToDraw", cardId, "de", socket.id, "at", posX, posY, "pct", xPct, yPct);
 
     Object.keys(state.families).forEach((f) => {
       const list = state.families[f] || [];
@@ -134,7 +134,7 @@ io.on("connection", (socket) => {
       if (idx !== -1) list.splice(idx, 1);
     });
 
-    socket.broadcast.emit("draw:moved", { cardId, posX, posY });
+    socket.broadcast.emit("draw:moved", { cardId, posX, posY, xPct, yPct });
     io.emit("counters", recomputeCounters());
   });
 
