@@ -1630,7 +1630,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById("presence-count");
     if (el) {
       el.textContent = "Offline";
-      el.style.opacity = 0.7;
     }
   }
 });
