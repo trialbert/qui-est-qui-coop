@@ -74,6 +74,16 @@ function broadcastPresence() {
 
 // ---- SOCKETS ----
 io.on("connection", (socket) => {
+  const MAX_PLAYERS = 20;
+  const currentCount = io.of("/").sockets.size;
+
+  if (currentCount >= MAX_PLAYERS) {
+    console.log(`⚠️ Connexion refusée (${currentCount}/${MAX_PLAYERS})`);
+    socket.emit("server:full", { max: MAX_PLAYERS });
+    socket.disconnect(true);
+    return;
+  }
+
   console.log("🔌 Nouveau client", socket.id);
   ensurePlayer(socket.id);
   broadcastPresence();

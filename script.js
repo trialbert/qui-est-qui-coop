@@ -1244,6 +1244,28 @@ function initCollabSimple() {
   });
   window.socketCollab = socket; // <-- on le stocke ici pour le reste du code
 
+    // ✅ Gestion du serveur plein (max 20 joueurs)
+  socket.on('server:full', ({ max }) => {
+  const coopButton = document.getElementById('coopToggle');
+  if (coopButton) {
+    // forcer l'état “plein” côté UI
+    coopButton.disabled = true;
+    coopButton.classList.add('full', 'shake');
+    coopButton.title = `Mode coop complet (${max}/${max} joueurs)`;
+
+    // on enlève juste l'animation après coup (mais on garde .full)
+    setTimeout(() => {
+      coopButton.classList.remove('shake');
+    }, 500);
+  }
+
+  // on coupe proprement la connexion tentée
+  if (window.socketCollab) {
+    window.socketCollab.disconnect();
+    window.socketCollab = null;
+  }
+});
+
   let selfId = null;
   const remoteCursors = {}; // { socketId: HTMLElement }
   const peers = {};        // { socketId: { name, color } }
@@ -1274,9 +1296,24 @@ function initCollabSimple() {
 
   // 4) Présence
   socket.on('presence', (n) => {
-    const el = document.getElementById('presence-count');
-    if (el) el.textContent = n;
-  });
+  const el = document.getElementById('presence-count');
+  if (el) el.textContent = `${n}/20`;
+
+  const coopButton = document.getElementById('coopToggle');
+  if (coopButton) {
+    if (n >= 20) {
+      // serveur plein → bouton bloqué visuellement
+      coopButton.disabled = true;
+      coopButton.classList.add('full');
+      coopButton.title = "Mode coop complet (20/20 joueurs)";
+    } else {
+      // encore de la place
+      coopButton.disabled = false;
+      coopButton.classList.remove('full');
+      coopButton.title = "Activer le mode coop";
+    }
+  }
+});
 
   // 5) Liste initiale de joueurs
   socket.on('players:init', (all) => {

@@ -967,3 +967,23 @@ body.mobile-block .mobile-gate{ display: flex; }
 .coop-btn.active:hover {
   background: rgba(237, 109, 99, 0.8);
 }
+/* état "plein" du bouton coop */
+.coop-btn.full,
+.coop-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* petite animation quand le serveur est plein */
+.coop-btn.shake {
+  animation: coop-shake 0.4s ease;
+}
+
+@keyframes coop-shake {
+  0%   { transform: translateX(0); }
+  20%  { transform: translateX(-3px); }
+  40%  { transform: translateX(3px); }
+  60%  { transform: translateX(-2px); }
+  80%  { transform: translateX(2px); }
+  100% { transform: translateX(0); }
+}
