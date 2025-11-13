@@ -601,6 +601,26 @@ body.light .family-progress { color: #222; }
   filter: brightness(0.8);
   transition: transform 0.1s, filter 0.1s;
 }
+/* Anneau de progression autour du bouton reset pendant l'appui long */
+#resetBtn {
+  position: relative;
+  --hold: 0;         /* 0 → 0%, 100 → 100% */
+  --holding: 0;      /* 0/1 pour afficher/masquer l’anneau */
+}
+
+#resetBtn::after{
+  content: "";
+  position: absolute;
+  inset: -4px;                 /* épaisseur + débord léger */
+  border-radius: 999px;
+  pointer-events: none;
+  /* Anneau = conic-gradient + trou au centre (mask) */
+  background: conic-gradient(#ff5c5c calc(var(--hold) * 1%), rgba(255,255,255,0.12) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 0px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 0px));
+  opacity: var(--holding);
+  transition: opacity .15s;
+}
 
 /* Style commun */
 .info-btn,

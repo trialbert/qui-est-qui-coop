@@ -761,16 +761,18 @@ document.getElementById('giveUpBtn').addEventListener('click',giveUp);
 document.getElementById('answerInput').addEventListener('keydown',(e)=>{ if(e.key==='Enter') validateCurrent(); });
 
 /* =========================
-   RESET (GOMME) - APPUI LONG
+   RESET (GOMME) - APPUI LONG + ANNEAU
    ========================= */
 const resetBtn = document.getElementById('resetBtn');
 
 if (resetBtn) {
   const HOLD_DURATION = 2000; // 2 secondes d'appui continu
   let holdTimer = null;
+  let holdStart = 0;
+  let rafId = null;
 
   async function triggerSharedReset() {
-    // 1️⃣ Reset local (ton comportement actuel)
+    // 1️⃣ Reset local
     await shuffleDeck(false); // reset complet + mélange
 
     // 2️⃣ Prévenir les autres joueurs (coop)
@@ -780,29 +782,46 @@ if (resetBtn) {
     }
   }
 
+  function animateRing() {
+    const elapsed = performance.now() - holdStart;
+    const pct = Math.min(1, elapsed / HOLD_DURATION);
+    resetBtn.style.setProperty('--hold', (pct * 100).toFixed(2));
+    if (holdTimer && pct < 1) {
+      rafId = requestAnimationFrame(animateRing);
+    }
+  }
+
   function startHold(e) {
     e.preventDefault();
-
     if (holdTimer) return; // déjà en cours
+
+    holdStart = performance.now();
     resetBtn.classList.add('reset-hold');
+    resetBtn.style.setProperty('--holding', 1);
+    resetBtn.style.setProperty('--hold', 0);
+
+    rafId = requestAnimationFrame(animateRing);
 
     holdTimer = setTimeout(async () => {
-      holdTimer = null;
-      resetBtn.classList.remove('reset-hold');
-
+      // fin de l’appui long → confirmation
+      clearTimers();
       const ok = confirm('Réinitialiser toutes les réponses et remélanger les cartes pour tout le monde ?');
       if (!ok) return;
-
       await triggerSharedReset();
     }, HOLD_DURATION);
   }
 
   function cancelHold() {
-    if (holdTimer) {
-      clearTimeout(holdTimer);
-      holdTimer = null;
-    }
+    if (!holdTimer) return;
+    clearTimers();
+  }
+
+  function clearTimers() {
+    if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
     resetBtn.classList.remove('reset-hold');
+    resetBtn.style.setProperty('--holding', 0);
+    resetBtn.style.setProperty('--hold', 0);
   }
 
   // Souris
@@ -811,7 +830,7 @@ if (resetBtn) {
   resetBtn.addEventListener('mouseleave', cancelHold);
 
   // Tactile
-  resetBtn.addEventListener('touchstart', startHold);
+  resetBtn.addEventListener('touchstart', startHold, { passive: false });
   resetBtn.addEventListener('touchend', cancelHold);
   resetBtn.addEventListener('touchcancel', cancelHold);
 }
