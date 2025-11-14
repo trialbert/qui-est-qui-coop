@@ -603,7 +603,6 @@ body.light .family-progress { color: #222; }
 }
 /* Anneau de progression autour du bouton reset pendant l'appui long */
 #resetBtn {
-  position: relative;
   --hold: 0;         /* 0 → 0%, 100 → 100% */
   --holding: 0;      /* 0/1 pour afficher/masquer l’anneau */
 }
